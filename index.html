@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Homework 1 Starter</title>
+	<!-- An AMD-loader like RequireJS is necessary for srlib's asynchronous modules -->
+	<script src="require.js"></script>
+	<!-- Load srlib following RequireJS -->
+	<script src="srlib.js"></script>
+	<!-- JQuery provides a very nice set of tools when dealing with AJAX requests -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+	<script type="text/javascript">
+    // This max value for this is 20000. If you go above it, it will limit to 20000. There are 10k arrows and 10k not arrows.
+    // I recommend starting small until all your features calculate correctly, because 20000 will take a few min to fetch and calculate.
+    maxResults = 20000;
+    optimalFeatureSubset ='No'; //'Yes' to generate results only for optimal features. 
+
+    // The interpretation will automatically be added to each row of csv data for you.
+    // Place the function names to calculate your features here. The function name will be the header of the csv file for that row.
+    
+    var featureFunctions;
+    if (optimalFeatureSubset =='No'){
+    //ALL 30 THE FEATURES
+    featureFunctions = [rubinef1,rubinef2,rubinef3, rubinef4, rubinef5, rubinef6, rubinef7, rubinef8, rubinef9, rubinef10, rubinef11, rubinef12, rubinef13, longf12,longf13,longf14
+    ,longf15,longf16,longf17,longf18,longf19,longf20,longf21,longf22,myfeature1,myfeature2,myfeature3,myfeature4,myfeature5,myfeature6];
+    }
+    else {
+    //6 OPTIMAL FEATURE SUBSET (TO run optimal featureFunctions, just uncomment the l
+    featureFunctions =[rubinef2,rubinef3, rubinef4, rubinef8, longf12, longf18]
+    }
+    
+
+    
+    
+    /* Define your feature functions here
+        Each function needs to return the feature value */
+    function preprocess(sketch){ //Preprocess function to get rid of corrupt data. 
+    var points=[]
+    var i;
+    for (i=0;i<sketch.strokes.length;i++){
+    if(sketch.strokes[i] && sketch.strokes[i].points && sketch.strokes[i].points.length>0){
+    for (j=0;j<sketch.strokes[i].points.length;j++){
+//     console.log('in here');
+		if (sketch.strokes[i].points[j]){
+   		points.push(sketch.points[sketch.strokes[i].points[j]])
+   		}
+    }
+    }
+    }
+    return points;
+    }
+
+	
+	
+	function rubinef1(sketch){ //Cosine of the initial angle of gesture
+    var pt1 = sketch[0]
+    var pt3;
+    if (sketch.length >=3){
+    pt3 = sketch[2];
+    }
+    else{
+    return 0;}
+    fvalue = (pt3.x - pt1.x)/ Math.sqrt(Math.pow(pt3.x-pt1.x,2)+Math.pow(pt3.y-pt1.y,2));
+    return fvalue;
+     
+    }
+    
+    function rubinef2(sketch){ //Sine of the initial angle of gesture
+    var pt1 = sketch[0]
+    var pt3;
+    if (sketch.length >=3){
+    pt3 = sketch[2];
+    }
+    else{
+    return 0;}
+    fvalue = (pt3.y - pt1.y)/ Math.sqrt(Math.pow(pt3.x-pt1.x,2)+Math.pow(pt3.y-pt1.y,2));
+    return fvalue;
+    }
+    
+    function rubinef3(sketch){ //Length of the bounding box diagonal
+    xmax = Number.MIN_SAFE_INTEGER
+    xmin = Number.MAX_SAFE_INTEGER
+    ymax = Number.MIN_SAFE_INTEGER
+    ymin = Number.MAX_SAFE_INTEGER
+    var i;
+    for (i=0;i<sketch.length;i++){
+    	xmax = Math.max(xmax,sketch[i].x);
+    	ymax = Math.max(ymax,sketch[i].y);
+    	xmin = Math.min(xmin,sketch[i].x);
+    	ymin = Math.min(ymin,sketch[i].y);
+    	
+    	}
+    var fvalue = Math.sqrt(Math.pow(xmax-xmin,2)+Math.pow(ymax-ymin,2));
+    return fvalue
+    }
+
+	function rubinef4(sketch){ //Angle of the bounding box diagonal
+	xmax = Number.MIN_SAFE_INTEGER
+    xmin = Number.MAX_SAFE_INTEGER
+    ymax = Number.MIN_SAFE_INTEGER
+    ymin = Number.MAX_SAFE_INTEGER
+    var i;
+    for (i=0;i<sketch.length;i++){
+    	xmax = Math.max(xmax,sketch[i].x);
+    	ymax = Math.max(ymax,sketch[i].y);
+    	xmin = Math.min(xmin,sketch[i].x);
+    	ymin = Math.min(ymin,sketch[i].y);
+    	}
+    var fvalue  = Math.atan((ymax-ymin)/(xmax-xmin));
+    return fvalue;
+	}
+
+	function rubinef5(sketch){ //Distance between first and last points
+	x0= sketch[0].x;
+	xp = sketch[sketch.length-1].x;
+	y0= sketch[0].y;
+	yp = sketch[sketch.length-1].y;
+	var fvalue = Math.sqrt(Math.pow(xp-x0,2)+Math.pow(yp-y0,2));
+	return fvalue;
+	}
+
+	function rubinef6(sketch){ //Cosine of the Angle between first and last point.
+	var f5val = rubinef5(sketch);
+	x0= sketch[0].x;
+	xp = sketch[sketch.length-1].x;
+	var fvalue = (xp-x0)/f5val;
+	return fvalue;
+	
+	}
+	
+	function rubinef7(sketch){ //Sine of the Angle between first and last point.
+	var f5val = rubinef5(sketch);
+	y0= sketch[0].y;
+	yp = sketch[sketch.length-1].y;
+	var fvalue = (yp-y0)/f5val;
+	return fvalue;
+	}
+
+	function rubinef8(sketch){ //Total gesture length
+	var prev = sketch[0];
+	var delta=0;
+	var dx=0;
+	var dy=0;
+	for (i=0;i<sketch.length;i++){
+    	 dx= sketch[i].x - prev.x;
+    	 dy = sketch[i].y - prev.y;
+    	 delta+= Math.sqrt(Math.pow(dx,2)+Math.pow(dy,2));
+    	 prev = sketch[i];
+    	}
+    return delta;
+	}
+	
+	function findTheta(p1, p2, p3)
+	{	
+		var y = (p3.x - p2.x)*(p2.y - p1.y) - (p2.x - p1.x)*(p3.y - p2.y);
+		var x = (p3.x - p2.x)*(p2.x - p1.x) + (p3.y - p2.y)*(p2.y - p1.y);
+		return Math.atan2(y,x);
+	}
+	
+	function rubinef9(sketch){ //Total Angle Traversed
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var fvalue =0;
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+    	fvalue+=theta
+    	prev1=prev2;
+    	prev2=curr;
+    	
+    	}
+    return fvalue;
+	}
+	
+	function rubinef10(sketch){ //Sum of absolute angle at each mouse point.
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var fvalue =0;
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+    	fvalue+=Math.abs(theta);
+    	prev1=prev2;
+    	prev2=curr;
+    	}
+    return fvalue;
+	}
+	
+	function rubinef11(sketch){ //Sum of squared value of angles
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var fvalue =0;
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+    	fvalue+=Math.pow(theta,2);
+    	prev1=prev2;
+    	prev2=curr;
+    	}
+    return fvalue;
+	}
+	
+	function rubinef12(sketch){ //Maximum Speed
+	var prev = sketch[0];
+	var maxspeed=0;
+	var dx=0;
+	var dy=0;
+	for (i=0;i<sketch.length;i++){
+    	 dx= sketch[i].x - prev.x;
+    	 dy = sketch[i].y - prev.y;
+    	 maxspeed= Math.max(maxspeed,Math.pow(dx,2)+Math.pow(dy,2)/(Math.pow(1+sketch[i].time-prev.time),2));
+    	 prev = sketch[i];
+    	}
+    return maxspeed;
+	}
+	
+	function rubinef13(sketch){ //Duration of Gesture
+	var t0= sketch[0].time;
+	var tp = sketch[sketch.length-1].time;
+	var fvalue = tp-t0;
+	return fvalue;
+	}
+	
+	function longf12(sketch){ //Aspect Ratio
+	return ((45*Math.PI)/180)-rubinef4(sketch)
+	}
+	
+	function longf13(sketch){ //Curviness
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var fvalue =0;
+	var threshold  = ((19*Math.PI)/180);
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+    	if (Math.abs(theta) < threshold){
+    	fvalue+=Math.abs(theta);
+    	}
+    	prev1=prev2;
+    	prev2=curr;
+    	}
+    return fvalue;
+	}
+	
+	function longf14(sketch){ //Relative Rotation
+	if (rubinef8(sketch)!=0){
+	return rubinef9(sketch)/rubinef8(sketch);
+	}
+	else{
+	return 0;}
+	}
+	
+	function longf15(sketch){ //Stroke Length to End Point Ratio
+	if(rubinef5(sketch)!=0){
+	return rubinef8(sketch)/rubinef5(sketch);
+	}
+	else{
+	return 0;}
+	}
+	
+	function longf16(sketch){ //Stroke Length to Bounding Box Ratio
+	if(rubinef3(sketch)!=0){
+	return rubinef8(sketch)/rubinef3(sketch);
+	}
+	else{
+	return 0;}
+	}
+	
+	function longf17(sketch){ //Non-subjective Openness
+	if (rubinef3(sketch)!=0){
+	return rubinef5(sketch)/rubinef3(sketch);
+	}
+	else{
+	return 0;}
+	}
+	
+	function longf18(sketch){ //Area of bounding box
+	var d = rubinef3(sketch)
+	var theta = rubinef4(sketch)
+	var fvalue = d*d*Math.sin(theta)*Math.cos(theta);
+	return fvalue;
+	}
+	
+	function longf19(sketch){ //Log of area
+	return Math.log(Math.abs(longf18(sketch)));
+	}
+
+	function longf20(sketch){ //rotational change to motion
+	if (rubinef10(sketch)!=0){
+	return rubinef9(sketch)/rubinef10(sketch);
+	}
+	else{
+	return 0;}
+	}
+	
+	function longf21(sketch){ //log of stroke length
+	return Math.log(Math.abs(rubinef8(sketch)));
+	}
+	
+	function longf22(sketch){ //log of aspect ratio
+	return Math.log(Math.abs(longf12(sketch)));
+	}
+	
+	function myfeature1(sketch){ //log of bounding box diagonal
+	return Math.log(rubinef3(sketch));
+	}
+	
+	function myfeature2(sketch){ //NDDE
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var maxDelta =0;
+	var minDelta =Number.MAX_SAFE_INTEGER;
+	var maxChangePoint;
+	var minChangePoint;
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+    	theta = Math.abs(theta);
+    	if (theta>maxDelta){
+    	maxDelta = theta;
+    	maxChangePoint = i-1;
+    	}
+    	if (theta <minDelta){
+    	minDelta = theta;
+    	minChangePoint = i-1;
+    	}
+    	prev1=prev2;
+    	prev2=curr;
+    	}
+    // find the stroke length between points of max and min direction change
+    tempPoints=[]
+    minChangePoint = Math.max(0,minChangePoint);
+    var start=Math.min(maxChangePoint,minChangePoint);
+    var end=Math.max(maxChangePoint,minChangePoint);
+    var j;
+    var nddelength;
+    for( j=start;j<=end;j++){
+    	tempPoints.push(sketch[j]);
+    }
+    nddelength = rubinef8(tempPoints);
+    var totalStrokeLength = rubinef8(sketch);
+    return nddelength/totalStrokeLength;
+	}
+	
+	function myfeature3(sketch){ //DCR
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var maxDelta =0;
+	var avgDelta =0;
+	
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+    	theta = Math.abs(theta);
+    	if (theta>maxDelta){
+    	maxDelta = theta;
+    	}
+    	avgDelta+=theta;
+    	prev1=prev2;
+    	prev2=curr;
+    	}
+    avgDelta/=sketch.length-2;
+    return maxDelta/avgDelta;
+	}
+	
+	function myfeature4(sketch){//Bounding box longer side to smaller side ratio. 
+	xmax = Number.MIN_SAFE_INTEGER
+    xmin = Number.MAX_SAFE_INTEGER
+    ymax = Number.MIN_SAFE_INTEGER
+    ymin = Number.MAX_SAFE_INTEGER
+    var i;
+    for (i=0;i<sketch.length;i++){
+    	xmax = Math.max(xmax,sketch[i].x);
+    	ymax = Math.max(ymax,sketch[i].y);
+    	xmin = Math.min(xmin,sketch[i].x);
+    	ymin = Math.min(ymin,sketch[i].y);
+    	}
+    var side1 = xmax-xmin;
+    var side2 = ymax-ymin;
+    return Math.max(side1,side2)/Math.min(side1,side2);
+	}
+	
+	function myfeature5(sketch){ //Major angle changes 
+	var prev1 = sketch[0];
+	var prev2 = sketch[0];
+	var theta = 0;
+	var threshold = ((20*Math.PI)/180);
+	var count =0;
+	
+	for (i=0;i<sketch.length;i++){
+    	curr = sketch[i];
+    	theta= findTheta(prev1,prev2,curr);
+//     	theta = Math.abs(theta);
+//     	console.log(theta);
+    	if (theta>threshold){
+    	count+=1;
+    	}
+    	prev1=prev2;
+    	prev2=curr;
+    	}
+    return count;
+	}
+	
+	function myfeature6(sketch){//Average Curvature
+	return rubinef9(sketch)/sketch.length;
+	}
+	//
+	//
+	// Everything below here you shouldn't need to worry about.
+	//
+	//
+    
+    // Begin processing once webpage loaded
+	$(document).ready(function() {
+        features = [[]];
+		// DO NOT REMOVE THESE LINES
+        for (var i = 0; i < featureFunctions.length; i++) {
+            var f = featureFunctions[i];
+            features[0].push(f.name);
+        }
+        features[0].push('interpretation');
+        getSketchIds();
+	});
+    
+    function calculateFeatures(sketch) {
+		var row = [];
+		var interpret ; 
+		if (sketch.shapes[0].interpretation == 'arrow') {
+			interpret = 'arrow';
+		} else {
+			interpret = 'other';
+		}
+		sketch = preprocess(sketch)
+		// Now just push back all the feature values in order.
+		if (sketch.length>0){
+        for (var i = 0; i < featureFunctions.length; i++) {
+            var f = featureFunctions[i];
+            row.push(f(sketch)); 
+        }
+        row.push(interpret);
+        features.push(row);
+        }
+
+		// Finally push the row to the overall features array.
+		
+	}
+
+	function arrayToObj(array) {
+        var obj = {}
+        for (var i = 0; i < array.length; i++) {
+            var val = array[i];
+            var id = val.id;
+            delete val.id;
+            obj[id] = val;
+        }
+        return obj;
+    }
+
+    // Top answer from https://stackoverflow.com/questions/17836273/export-javascript-data-to-csv-file-without-server-interaction
+    function saveCSV() {
+    	var csvRows = [];
+    	for (var i = 0; i < features.length; i++) {
+    		csvRows.push(features[i].join(','));
+    	}
+
+    	var csvString = csvRows.join('\n');
+        var csvData = new Blob([csvString], { type: 'text/csv' });
+        var csvURL = URL.createObjectURL(csvData);
+    	var a = document.createElement('a');
+        
+    	a.href = csvURL;
+    	a.target = '_blank';
+    	a.download = 'features.csv';
+    	document.body.appendChild(a);
+    	a.click();
+    }
+
+    function getSketch() {
+    	if (counter == sketchIds.length || counter == maxResults) { saveCSV(); return; } // Reached the last sketch.
+    	var id = sketchIds[counter];
+    	counter++;
+		$.ajax({
+			type: "GET",
+			url: "http://srl-prod1.cs.tamu.edu:7750/getSketches?id=" + id,
+			dataType: 'json',
+			contentType: "application/json",
+			success: function(res) {
+				var sketch = res[0];
+				sketch.points = arrayToObj(sketch.points);
+				document.getElementById('progress').textContent = 'Calculating features for sketch ' + counter + ' of ' + maxResults;
+				calculateFeatures(sketch);
+				getSketch();
+			}
+		});
+    }
+
+	// Load data, populating global list of sketchIds
+	var sketchIds;
+	var counter = 0;
+	function getSketchIds() {
+		$.ajax({url: "http://srl-prod1.cs.tamu.edu:7750/getIds?domain=SketchRec2017", success: function(result) {
+			sketchIds = result;
+			getSketch();
+		}});
+	}
+	</script>
+</head>
+<!-- The body consists simply of a canvas for drawing and a selection list; this display is for the user's benefit, not required -->
+<body>
+
+<div id='progress'>0</div>
+
+</body>
+</html>
